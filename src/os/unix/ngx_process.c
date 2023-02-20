@@ -67,6 +67,11 @@ ngx_signal_t  signals[] = {
       "",
       ngx_signal_handler },
 
+    { ngx_signal_value(NGX_CLOSE_SIGNAL),
+      "SIG" ngx_value(NGX_CLOSE_SIGNAL),
+      "",
+      ngx_signal_handler },
+
     { SIGALRM, "SIGALRM", "", ngx_signal_handler },
 
     { SIGINT, "SIGINT", "", ngx_signal_handler },
@@ -390,6 +395,11 @@ ngx_signal_handler(int signo, siginfo_t *siginfo, void *ucontext)
             action = ", changing binary";
             break;
 
+        case ngx_signal_value(NGX_CLOSE_SIGNAL):
+            ngx_close = 1;
+            action = ", closing listening sockets";
+            break;
+
         case SIGALRM:
             ngx_sigalrm = 1;
             break;
@@ -429,6 +439,11 @@ ngx_signal_handler(int signo, siginfo_t *siginfo, void *ucontext)
         case ngx_signal_value(NGX_REOPEN_SIGNAL):
             ngx_reopen = 1;
             action = ", reopening logs";
+            break;
+
+        case ngx_signal_value(NGX_CLOSE_SIGNAL):
+            ngx_close = 1;
+            action = ", closing listening sockets";
             break;
 
         case ngx_signal_value(NGX_RECONFIGURE_SIGNAL):

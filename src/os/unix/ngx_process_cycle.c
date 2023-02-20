@@ -42,6 +42,7 @@ sig_atomic_t  ngx_debug_quit;
 ngx_uint_t    ngx_exiting;
 sig_atomic_t  ngx_reconfigure;
 sig_atomic_t  ngx_reopen;
+sig_atomic_t  ngx_close;
 
 sig_atomic_t  ngx_change_binary;
 ngx_pid_t     ngx_new_binary;
@@ -95,6 +96,7 @@ ngx_master_process_cycle(ngx_cycle_t *cycle)
     sigaddset(&set, ngx_signal_value(NGX_TERMINATE_SIGNAL));
     sigaddset(&set, ngx_signal_value(NGX_SHUTDOWN_SIGNAL));
     sigaddset(&set, ngx_signal_value(NGX_CHANGEBIN_SIGNAL));
+    sigaddset(&set, ngx_signal_value(NGX_CLOSE_SIGNAL));
 
     if (sigprocmask(SIG_BLOCK, &set, NULL) == -1) {
         ngx_log_error(NGX_LOG_ALERT, cycle->log, ngx_errno,
@@ -205,6 +207,15 @@ ngx_master_process_cycle(ngx_cycle_t *cycle)
                                         ngx_signal_value(NGX_SHUTDOWN_SIGNAL));
             ngx_close_listening_sockets(cycle);
 
+            continue;
+        }
+
+        if (ngx_close) {
+            ngx_log_error(NGX_LOG_NOTICE, cycle->log, 0, "closing listening sockets");
+            ngx_close_listening_sockets(cycle);
+            ngx_signal_worker_processes(cycle,
+                                        ngx_signal_value(NGX_CLOSE_SIGNAL));
+            ngx_setproctitle("master process (closed)");
             continue;
         }
 
@@ -744,6 +755,13 @@ ngx_worker_process_cycle(ngx_cycle_t *cycle, void *data)
             ngx_reopen = 0;
             ngx_log_error(NGX_LOG_NOTICE, cycle->log, 0, "reopening logs");
             ngx_reopen_files(cycle, -1);
+        }
+
+        if (ngx_close) {
+            ngx_log_error(NGX_LOG_NOTICE, cycle->log, 0, "closing listening sockets");
+            ngx_close_listening_sockets(cycle);
+            ngx_setproctitle("worker process (closed)");
+            continue;
         }
     }
 }
