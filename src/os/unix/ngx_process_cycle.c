@@ -746,7 +746,7 @@ ngx_worker_process_cycle(ngx_cycle_t *cycle, void *data)
                 ngx_exiting = 1;
                 ngx_set_shutdown_timer(cycle);
                 ngx_close_listening_sockets(cycle);
-                ngx_close_idle_connections(cycle);
+                ngx_close_idle_connections(cycle, 1);
                 ngx_event_process_posted(cycle, &ngx_posted_events);
             }
         }
@@ -760,6 +760,8 @@ ngx_worker_process_cycle(ngx_cycle_t *cycle, void *data)
         if (ngx_close) {
             ngx_log_error(NGX_LOG_NOTICE, cycle->log, 0, "closing listening sockets");
             ngx_close_listening_sockets(cycle);
+            ngx_close_idle_connections(cycle, 0);
+            ngx_event_process_posted(cycle, &ngx_posted_events);
             ngx_setproctitle("worker process (closed)");
             continue;
         }
